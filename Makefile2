@@ -1,0 +1,37 @@
+#!/bin/bash
+INPUTDIR=./references/
+INDEXDIR=./index/
+
+INPUTS_FA=$(wildcard $(INPUTDIR)*.fa)
+INPUTS_FASTA=$(wildcard $(INPUTDIR)*.fasta)
+
+NAMES_FA=$(patsubst $(INPUTDIR)%.fa, %, $(INPUTS_FA))
+NAMES_FASTA=$(patsubst $(INPUTDIR)%.fasta, %, $(INPUTS_FASTA))
+
+TARGETDIRS_FA=$(patsubst $(INPUTDIR)%.fa, $(INDEXDIR)%/, $(INPUTS_FA))
+TARGETDIRS_FASTA=$(patsubst $(INPUTDIR)%.fasta, $(INDEXDIR)%/, $(INPUTS_FASTA))
+
+NAMES=$(NAMES_FA) $(NAMES_FASTA)
+TARGETDIRS=$(TARGETDIRS_FA) $(TARGETDIRS_FASTA)
+
+TARGETNAMES=$(addsuffix .ann, $(NAMES))
+ 
+.PHONY: all clean
+all: $(TARGETNAMES)
+	@echo $(TARGETNAMES)
+	
+
+$(TARGETDIRS):	
+	@mkdir -p $@
+
+%.ann: $(INDEXDIR)%/
+	@echo ""
+	@echo Indexing file: $*
+	@echo ""
+	@if test -f $(INPUTDIR)$*.fa; then sbatch --partition=research.q --output=$*.out --wrap="bwa index -p $(INDEXDIR)$*/$* $(INPUTDIR)$*.fa"; fi
+	@if test -f $(INPUTDIR)$*.fasta; then sbatch --partition=research.q --output=$*.out --wrap="bwa index -p $(INDEXDIR)$*/$* $(INPUTDIR)$*.fasta"; fi
+
+clean:
+	rm -r index
+
+
